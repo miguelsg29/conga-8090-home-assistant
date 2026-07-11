@@ -1,19 +1,19 @@
 # Conga 8090 Ultra - Local MQTT Bridge (Home Assistant Add-on)
 
-Este proyecto permite el **control local total** del robot aspirador **Cecotec Conga 8090 Ultra** desde Home Assistant sin depender de los servidores en la nube de Cecotec[cite: 10]. 
+Este proyecto permite el **control local total** del robot aspirador **Cecotec Conga 8090 Ultra** desde Home Assistant sin depender de los servidores en la nube de Cecotec. 
 
-A diferencia de las generaciones anteriores (modelos 3090 al 6090) que utilizaban un protocolo binario compatible con proyectos como Congatudo, la serie 8000/Ultra utiliza una arquitectura moderna basada en **TLS 1.2 → WebSocket → Mensajes JSON** y mapas en **Protobuf (zlib)**[cite: 10]. Este puente suplanta por completo al servidor oficial, terminando la conexión cifrada de forma segura en tu entorno local[cite: 7, 10].
+A diferencia de las generaciones anteriores (modelos 3090 al 6090) que utilizaban un protocolo binario compatible con proyectos como Congatudo, la serie 8000/Ultra utiliza una arquitectura moderna basada en **TLS 1.2 → WebSocket → Mensajes JSON** y mapas en **Protobuf (zlib)**. Este puente suplanta por completo al servidor oficial, terminando la conexión cifrada de forma segura en tu entorno local.
 
 ---
 
 ## Características Soportadas ✅
 
-*   **Control de Entidad Vacuum Nativa:** Iniciar, pausar, detener, localizar (pitido) y retorno automático a la base de carga[cite: 7, 9].
-*   **Lógica Inteligente de Estados:** Mapeo en tiempo real del estado del robot (`cleaning`, `docked`, `returning`, `paused`, `idle`, `error`) cruzando los reportes de actividad con el estado de carga física[cite: 7].
-*   **Sensores de Telemetría:** Nivel de batería corregido (escala 0-100%), área total limpiada ($m^2$) y tiempo de limpieza transcurrido (minutos)[cite: 7, 9].
-*   **Limpieza Inmediata por Habitación:** Botones individuales independientes creados automáticamente para limpiar estancias específicas en base a los IDs reales de tu mapa[cite: 7, 9].
-*   **Selectores de Configuración Dinámica:** Ajuste en caliente desde la interfaz de Home Assistant para la potencia de succión, caudal de agua, nivel de vibración de la mopa y conmutador para doble pasada ($x2$)[cite: 7, 9].
-*   **MQTT Autodiscovery:** No requiere configuración manual de entidades en YAML; el puente publica la configuración del dispositivo y Home Assistant lo detecta al instante[cite: 7, 9].
+*   **Control de Entidad Vacuum Nativa:** Iniciar, pausar, detener, localizar (pitido) y retorno automático a la base de carga.
+*   **Lógica Inteligente de Estados:** Mapeo en tiempo real del estado del robot (`cleaning`, `docked`, `returning`, `paused`, `idle`, `error`) cruzando los reportes de actividad con el estado de carga física.
+*   **Sensores de Telemetría:** Nivel de batería corregido (escala 0-100%), área total limpiada ($m^2$) y tiempo de limpieza transcurrido (minutos).
+*   **Limpieza Inmediata por Habitación:** Botones individuales independientes creados automáticamente para limpiar estancias específicas en base a los IDs reales de tu mapa.
+*   **Selectores de Configuración Dinámica:** Ajuste en caliente desde la interfaz de Home Assistant para la potencia de succión, caudal de agua, nivel de vibración de la mopa y conmutador para doble pasada ($x2$).
+*   **MQTT Autodiscovery:** No requiere configuración manual de entidades en YAML; el puente publica la configuración del dispositivo y Home Assistant lo detecta al instante.
 
 ---
 
@@ -23,12 +23,12 @@ Para instalar el puente de forma nativa en tu servidor de Home Assistant OS sin 
 
 | Archivo | Descripción |
 | :--- | :--- |
-| `conga_8090_bridge/config.yaml` | Metadatos del Add-on y definición del formulario visual de configuración[cite: 9]. |
-| `conga_8090_bridge/Dockerfile` | Instrucciones de construcción del contenedor ligero (Alpine + Python3)[cite: 7]. |
-| `conga_8090_bridge/run.sh` | Script de inicialización y exportación automatizada de variables de entorno[cite: 7]. |
-| `conga_8090_bridge/conga_mqtt_bridge.py` | El código principal del puente local interactivo[cite: 7]. |
-| `decodificar_mapa.py` | Script auxiliar para extraer la rejilla binaria y exportar el mapa en formato PNG[cite: 3]. |
-| `mitm_captura_total.py` | Proxy interceptor TLS/WebSocket orientado a la captura inicial de credenciales[cite: 8]. |
+| `conga_8090_bridge/config.yaml` | Metadatos del Add-on y definición del formulario visual de configuración. |
+| `conga_8090_bridge/Dockerfile` | Instrucciones de construcción del contenedor ligero (Alpine + Python3). |
+| `conga_8090_bridge/run.sh` | Script de inicialización y exportación automatizada de variables de entorno. |
+| `conga_8090_bridge/conga_mqtt_bridge.py` | El código principal del puente local interactivo. |
+| `decodificar_mapa.py` | Script auxiliar para extraer la rejilla binaria y exportar el mapa en formato PNG. |
+| `mitm_captura_total.py` | Proxy interceptor TLS/WebSocket orientado a la captura inicial de credenciales. |
 
 ---
 
@@ -36,25 +36,25 @@ Para instalar el puente de forma nativa en tu servidor de Home Assistant OS sin 
 
 ### Paso 1: Extracción Exhaustiva de Credenciales Privadas
 
-Dado que las comunicaciones van cifradas, necesitas interceptar los identificadores únicos de tu unidad física antes de aislarla de internet[cite: 10].
+Dado que las comunicaciones van cifradas, necesitas interceptar los identificadores únicos de tu unidad física antes de aislarla de internet.
 
-1.  **Generar Certificados Temporales:** En una máquina local con OpenSSL instalado, genera un par de claves autofirmadas temporales[cite: 5]:
+1.  **Generar Certificados Temporales:** En una máquina local con OpenSSL instalado, genera un par de claves autofirmadas temporales:
     ```bash
     openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=tcp-cecotec.3irobotix.net"
     ```
-2.  **Colocar las Claves:** Asegúrate de guardar los archivos `cert.pem` y `key.pem` generados en el mismo directorio donde se encuentra el script `mitm_captura_total.py`[cite: 5, 8].
-3.  **Configurar Redirección DNS:** En tu servidor DNS local (AdGuard Home, Pi-hole o la sección de DNS estáticos de tu router), añade un **DNS Rewrite** para desviar el dominio `tcp-cecotec.3irobotix.net` hacia la IP local de la máquina donde ejecutarás la captura[cite: 2, 8].
-4.  **Iniciar la Captura:** Lanza el script en tu terminal[cite: 8]:
+2.  **Colocar las Claves:** Asegúrate de guardar los archivos `cert.pem` y `key.pem` generados en el mismo directorio donde se encuentra el script `mitm_captura_total.py`.
+3.  **Configurar Redirección DNS:** En tu servidor DNS local (AdGuard Home, Pi-hole o la sección de DNS estáticos de tu router), añade un **DNS Rewrite** para desviar el dominio `tcp-cecotec.3irobotix.net` hacia la IP local de la máquina donde ejecutarás la captura.
+4.  **Iniciar la Captura:** Lanza el script en tu terminal:
     ```bash
     python mitm_captura_total.py
     ```
-5.  **Reiniciar el Robot:** Apaga el interruptor de energía física de tu Conga, espera unos segundos y vuélvelo a encender[cite: 5, 9].
-6.  **Anotar Identificadores:** El robot conectará a tu proxy y verás aparecer en consola las tramas descifradas precedidas por `>>>`[cite: 8]. Copia y guarda en un lugar seguro los siguientes parámetros que verás en el bloque `auth/login`[cite: 2, 8]:
-    *   `did` (ID del dispositivo)[cite: 2]
-    *   `userId` (ID de vinculación de la App)[cite: 2]
-    *   `sn` (Número de serie)[cite: 2]
-    *   `mac` (Dirección MAC física)[cite: 2]
-    *   `AUTH` (Token de sesión JWT completo)[cite: 2]
+5.  **Reiniciar el Robot:** Apaga el interruptor de energía física de tu Conga, espera unos segundos y vuélvelo a encender.
+6.  **Anotar Identificadores:** El robot conectará a tu proxy y verás aparecer en consola las tramas descifradas precedidas por `>>>`. Copia y guarda en un lugar seguro los siguientes parámetros que verás en el bloque `auth/login`:
+    *   `did` (ID del dispositivo)
+    *   `userId` (ID de vinculación de la App)
+    *   `sn` (Número de serie)
+    *   `mac` (Dirección MAC física)
+    *   `AUTH` (Token de sesión JWT completo)
 
 > ⚠️ **NOTA DE SEGURIDAD:** Una vez obtenidos estos valores, detén el script de captura. Estos identificadores son estrictamente privados y actúan como las llaves de tu dispositivo; no los expongas en ningún repositorio público.
 
@@ -74,34 +74,34 @@ Dado que las comunicaciones van cifradas, necesitas interceptar los identificado
 
 Una vez completada la instalación interna, no inicies el servicio todavía:
 
-1.  Accede a la pestaña superior de **Configuración** del Add-on desde la interfaz web de Home Assistant[cite: 9].
-2.  Completa los campos del formulario interactivo generado automáticamente con tus credenciales locales[cite: 9]:
-    *   **MQTT_HOST:** IP local de tu instancia de Home Assistant o broker Mosquitto independiente[cite: 7].
-    *   **MQTT_USER / MQTT_PASS:** Credenciales de acceso de tu broker[cite: 7].
-    *   **ROBOT_DID / USERID / SN / MAC / AUTH_JWT:** Pega los valores exactos que recopilaste durante el proceso de captura del Paso 1[cite: 7].
-    *   **Configuraciones por Defecto:** Define los niveles de succión, agua y mopa preferidos con los que deseas que el robot inicie de forma automática al pulsar los botones de limpieza rápida por habitación[cite: 9].
-3.  Haz clic en **Guardar**[cite: 9].
+1.  Accede a la pestaña superior de **Configuración** del Add-on desde la interfaz web de Home Assistant.
+2.  Completa los campos del formulario interactivo generado automáticamente con tus credenciales locales:
+    *   **MQTT_HOST:** IP local de tu instancia de Home Assistant o broker Mosquitto independiente.
+    *   **MQTT_USER / MQTT_PASS:** Credenciales de acceso de tu broker.
+    *   **ROBOT_DID / USERID / SN / MAC / AUTH_JWT:** Pega los valores exactos que recopilaste durante el proceso de captura del Paso 1.
+    *   **Configuraciones por Defecto:** Define los niveles de succión, agua y mopa preferidos con los que deseas que el robot inicie de forma automática al pulsar los botones de limpieza rápida por habitación.
+3.  Haz clic en **Guardar**.
 4.  Regresa a la pestaña **Información** y haz clic en **Iniciar**.
 
-El script se encargará de levantar el servidor local de suplantación cifrada y mapeará instantáneamente la aspiradora como un dispositivo MQTT completo e interactivo dentro de tu red[cite: 7, 9].
+El script se encargará de levantar el servidor local de suplantación cifrada y mapeará instantáneamente la aspiradora como un dispositivo MQTT completo e interactivo dentro de tu red.
 
 ---
 
 ### Paso 4: Redirección del DNS a Producción (¡El paso definitivo! 🚀)
 
-Un error muy común es dejar el DNS apuntando al ordenador donde hiciste las pruebas iniciales[cite: 5, 9]. Para que el puente empiece a recibir los datos reales del robot, debes redirigir el tráfico hacia tu servidor de Home Assistant[cite: 7, 9]:
+Un error muy común es dejar el DNS apuntando al ordenador donde hiciste las pruebas iniciales. Para que el puente empiece a recibir los datos reales del robot, debes redirigir el tráfico hacia tu servidor de Home Assistant:
 
-1. **Modificar AdGuard Home / Pi-hole:** Vuelve a la regla de **DNS Rewrite** que creaste en el *Paso 1*[cite: 2, 8].
-2. **Cambiar la IP:** Borra la IP de tu ordenador y escribe la **IP local exacta de tu Home Assistant** [cite: 5, 9].
-3. **Reinicio eléctrico obligatorio:** Apaga el interruptor físico de tu Conga 8090, espera 5 segundos y vuélvelo a encender[cite: 5, 9]. Esto vaciará la caché DNS interna del robot y le obligará a buscar su nueva "nube" local en la IP de Home Assistant[cite: 2, 7].
+1. **Modificar AdGuard Home / Pi-hole:** Vuelve a la regla de **DNS Rewrite** que creaste en el *Paso 1*.
+2. **Cambiar la IP:** Borra la IP de tu ordenador y escribe la **IP local exacta de tu Home Assistant**.
+3. **Reinicio eléctrico obligatorio:** Apaga el interruptor físico de tu Conga 8090, espera 5 segundos y vuélvelo a encender. Esto vaciará la caché DNS interna del robot y le obligará a buscar su nueva "nube" local en la IP de Home Assistant.
 
-En cuanto el robot arranque, verás en los registros (logs) del Add-on cómo aparece el mensaje `[robot] conectado ✓` y las entidades de tu panel MQTT cobrarán vida con el estado real de la batería y las habitaciones[cite: 7, 9].
+En cuanto el robot arranque, verás en los registros (logs) del Add-on cómo aparece el mensaje `[robot] conectado ✓` y las entidades de tu panel MQTT cobrarán vida con el estado real de la batería y las habitaciones.
 
 ---
 
 ## Contribuciones e Ingeniería Inversa del Mapa
 
-Si deseas avanzar en el renderizado en tiempo real del mapa de tu vivienda dentro de Home Assistant, el script `decodificar_mapa.py` detalla el mecanismo matemático de descompresión de la carga útil binaria del servicio `syn_no_cache`[cite: 3]. Extrae el flujo *zlib* (firma `78 9c`), parsea los campos de nivel superior mapeados en *Protobuf* y reconstruye de manera exacta la rejilla espacial de $800 \times 800$ celdas para exportar el plano de habitaciones etiquetado en formato de imagen nativa[cite: 3].
+Si deseas avanzar en el renderizado en tiempo real del mapa de tu vivienda dentro de Home Assistant, el script `decodificar_mapa.py` detalla el mecanismo matemático de descompresión de la carga útil binaria del servicio `syn_no_cache`. Extrae el flujo *zlib* (firma `78 9c`), parsea los campos de nivel superior mapeados en *Protobuf* y reconstruye de manera exacta la rejilla espacial de $800 \times 800$ celdas para exportar el plano de habitaciones etiquetado en formato de imagen nativa.
 
 ---
 
