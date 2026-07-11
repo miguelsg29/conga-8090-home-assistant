@@ -1,9 +1,12 @@
 FROM alpine:latest
 
-# Instalar Python y dependencias de red
-RUN apk add --no-cache python3 py3-pip openssl jq
+# Forzar a Python a mostrar los logs en tiempo real sin búfer
+ENV PYTHONUNBUFFERED=1
 
-# Instalar la librería MQTT rompiendo la restricción de paquetes del sistema del contenedor
+# Instalar Python, dependencias de red y librerías criptográficas de soporte para SSL
+RUN apk add --no-cache python3 py3-pip openssl jq python3-dev build-base libffi-dev
+
+# Instalar la librería MQTT
 RUN pip3 install paho-mqtt --break-system-packages
 
 # Copiar archivos al contenedor
