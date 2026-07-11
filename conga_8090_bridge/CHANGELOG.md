@@ -1,3 +1,6 @@
+## 1.0.10
+- Reparación de errores.
+
 ## 1.0.9
 - Reparación de errores.
 
