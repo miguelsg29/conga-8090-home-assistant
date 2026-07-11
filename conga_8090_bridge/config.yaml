@@ -1,5 +1,5 @@
 name: "Conga 8090 Local Bridge"
-version: "1.0.4"
+version: "1.0.5"
 slug: "conga_8090_local_bridge"
 description: "Puente local y servidor de suplantación para controlar la Conga 8090 Ultra vía MQTT sin nube."
 url: "https://github.com/miguelsg29/conga-8090-home-assistant"
