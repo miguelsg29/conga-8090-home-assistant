@@ -1,0 +1,44 @@
+name: "Conga 8090 Local Bridge"
+version: "1.0.0"
+slug: "conga_8090_local_bridge"
+description: "Puente local y servidor de suplantación para controlar la Conga 8090 Ultra vía MQTT sin nube."
+url: "https://github.com/miguelsg29/conga-8090-home-assistant"
+arch:
+  - aarch64
+  - amd64
+  - armv7
+init: false
+ports:
+  9090/tcp: 9090
+options:
+  MQTT_HOST: "192.168.1.X"
+  MQTT_PORT: 1883
+  MQTT_USER: ""
+  MQTT_PASS: ""
+  ROBOT_DID: 0
+  ROBOT_USERID: 0
+  ROBOT_SN: "PON_AQUI_EL_SN_DE_TU_ROBOT"
+  ROBOT_MAC: "00:00:00:00:00:00"
+  FACTORY_ID: "1003"
+  PROJECT_TYPE: "CECOTECCRL350-1001"
+  LISTEN_PORT: 9090
+  DEFAULT_FAN: "Normal"
+  DEFAULT_WATER: "Medio"
+  DEFAULT_MOP: "Estándar"
+  DEFAULT_TWICE: "off"
+schema:
+  MQTT_HOST: str
+  MQTT_PORT: int
+  MQTT_USER: str?
+  MQTT_PASS: password?
+  ROBOT_DID: int
+  ROBOT_USERID: int
+  ROBOT_SN: str
+  ROBOT_MAC: str
+  FACTORY_ID: str
+  PROJECT_TYPE: str
+  LISTEN_PORT: int
+  DEFAULT_FAN: list(Off|Eco|Normal|Turbo)
+  DEFAULT_WATER: list(Off|Bajo|Medio|Alto)
+  DEFAULT_MOP: list(Off|Estándar|Fuerte|Potente)
+  DEFAULT_TWICE: list(on|off)
