@@ -1,10 +1,9 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM alpine:latest
 
 # Instalar Python y dependencias de red
 RUN apk add --no-cache python3 py3-pip openssl jq
 
-# Instalar la librería MQTT rompiendo la restricción de paquetes del sistema del contenedor externo
+# Instalar la librería MQTT rompiendo la restricción de paquetes del sistema del contenedor
 RUN pip3 install paho-mqtt --break-system-packages
 
 # Copiar archivos al contenedor
