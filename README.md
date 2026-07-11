@@ -87,6 +87,18 @@ El script se encargará de levantar el servidor local de suplantación cifrada y
 
 ---
 
+### Paso 4: Redirección del DNS a Producción (¡El paso definitivo! 🚀)
+
+Un error muy común es dejar el DNS apuntando al ordenador donde hiciste las pruebas iniciales[cite: 5, 9]. Para que el puente empiece a recibir los datos reales del robot, debes redirigir el tráfico hacia tu servidor de Home Assistant[cite: 7, 9]:
+
+1. **Modificar AdGuard Home / Pi-hole:** Vuelve a la regla de **DNS Rewrite** que creaste en el *Paso 1*[cite: 2, 8].
+2. **Cambiar la IP:** Borra la IP de tu ordenador y escribe la **IP local exacta de tu Home Assistant** [cite: 5, 9].
+3. **Reinicio eléctrico obligatorio:** Apaga el interruptor físico de tu Conga 8090, espera 5 segundos y vuélvelo a encender[cite: 5, 9]. Esto vaciará la caché DNS interna del robot y le obligará a buscar su nueva "nube" local en la IP de Home Assistant[cite: 2, 7].
+
+En cuanto el robot arranque, verás en los registros (logs) del Add-on cómo aparece el mensaje `[robot] conectado ✓` y las entidades de tu panel MQTT cobrarán vida con el estado real de la batería y las habitaciones[cite: 7, 9].
+
+---
+
 ## Contribuciones e Ingeniería Inversa del Mapa
 
 Si deseas avanzar en el renderizado en tiempo real del mapa de tu vivienda dentro de Home Assistant, el script `decodificar_mapa.py` detalla el mecanismo matemático de descompresión de la carga útil binaria del servicio `syn_no_cache`[cite: 3]. Extrae el flujo *zlib* (firma `78 9c`), parsea los campos de nivel superior mapeados en *Protobuf* y reconstruye de manera exacta la rejilla espacial de $800 \times 800$ celdas para exportar el plano de habitaciones etiquetado en formato de imagen nativa[cite: 3].
