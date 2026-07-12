@@ -53,22 +53,64 @@ def load_env(path=".env"):
 _env = load_env()
 
 # ==================== CONFIGURACION ====================
-# --- MQTT (desde .env o variables de entorno del Add-on) ---
-MQTT_HOST = _env("MQTT_HOST", "192.168.1.X")
+# --- MQTT (desde .env) ---
+MQTT_HOST = _env("MQTT_HOST", "192.168.31.2")
 MQTT_PORT = int(_env("MQTT_PORT", "1883"))
 MQTT_USER = _env("MQTT_USER", "")
 MQTT_PASS = _env("MQTT_PASS", "")
 
-# --- Robot (rellena con los valores capturados de tu propio robot) ---
+# --- Robot (desde .env, con valores de EJEMPLO como default) ---
+# IMPORTANTE: los valores reales de TU robot van en el .env, no aqui.
+# Se obtienen del login capturado con el MITM (ver documentacion).
 LISTEN_PORT = int(_env("LISTEN_PORT", "9090"))
 WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-ROBOT_DID = int(_env("ROBOT_DID", "0"))
-ROBOT_USERID = int(_env("ROBOT_USERID", "0"))
-ROBOT_SN = _env("ROBOT_SN", "TU_ROBOT_SN")
-ROBOT_MAC = _env("ROBOT_MAC", "00:00:00:00:00:00")
-FACTORY_ID = _env("FACTORY_ID", "1003")                   # Identificador común del modelo 8090 Ultra
-PROJECT_TYPE = _env("PROJECT_TYPE", "CECOTECCRL350-1001")  # Identificador común del modelo 8090 Ultra
-AUTH_JWT = _env("AUTH_JWT", "TU_AUTH_JWT_CAPTURADO")
+ROBOT_DID = int(_env("ROBOT_DID", "123456"))
+ROBOT_USERID = int(_env("ROBOT_USERID", "654321"))
+ROBOT_SN = _env("ROBOT_SN", "500400000000")
+ROBOT_MAC = _env("ROBOT_MAC", "12:34:56:78:9A:BC")
+FACTORY_ID = _env("FACTORY_ID", "1003")
+PROJECT_TYPE = _env("PROJECT_TYPE", "CECOTECCRL350-1001")
+
+
+def make_synthetic_jwt(did, factory_id):
+    """Genera un JWT con estructura valida, firma FALSA y SIN caducidad.
+
+    El robot no valida la firma del JWT (solo necesita code:0 y respuesta bien
+    formada), asi que un token sintetico sin 'timestamp' evita la caducidad del
+    token capturado. Verifica con test_jwt_sintetico.py que tu unidad lo acepta.
+    """
+    def b64url(data):
+        return base64.urlsafe_b64encode(data).decode().rstrip("=")
+    header = {"typ": "JWT", "alg": "HS256"}
+    payload = {
+        "value": json.dumps({
+            "data": {"FACTORY_ID": str(factory_id)},
+            "clientType": "ROBOT",
+            "id": str(did),
+            "resetCode": 0,
+        }),
+        "version": None, "scope": None, "timestamp": None,  # sin caducidad
+    }
+    h = b64url(json.dumps(header, separators=(",", ":")).encode())
+    p = b64url(json.dumps(payload, separators=(",", ":")).encode())
+    sig = "SYNTHETIC0SIGNATURE0NO0VALIDATION0NEEDED000000000000000000000"
+    return f"{h}.{p}.{sig}"
+
+
+# --- Selección del JWT ---
+# Opciones (via .env):
+#   AUTH_JWT=<token>   -> usa ese token tal cual (el capturado de tu robot)
+#   AUTH_JWT vacio     -> genera uno SINTÉTICO automaticamente (sin caducidad)
+#   USE_SYNTHETIC_JWT=on -> fuerza el sintético aunque haya AUTH_JWT en el .env
+_auth_jwt_env = _env("AUTH_JWT", "").strip()
+_force_synthetic = _env("USE_SYNTHETIC_JWT", "off").lower() in ("on", "true", "1", "yes")
+
+if _force_synthetic or not _auth_jwt_env:
+    AUTH_JWT = make_synthetic_jwt(ROBOT_DID, FACTORY_ID)
+    _jwt_mode = "SINTÉTICO (generado, sin caducidad)"
+else:
+    AUTH_JWT = _auth_jwt_env
+    _jwt_mode = "capturado (del .env)"
 
 # --- Topics MQTT ---
 DISC_PREFIX = "homeassistant"
@@ -650,6 +692,7 @@ def robot_server():
 
 def main():
     print("=== Puente Conga 8090 <-> Home Assistant (MQTT) ===")
+    print(f"[JWT] modo: {_jwt_mode}")
     start_mqtt()
     robot_server()
 
