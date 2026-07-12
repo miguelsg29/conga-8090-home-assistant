@@ -1,3 +1,6 @@
+## 1.1.1
+- Actualizar documentación.
+
 ## 1.1.0
 - JWT sintético (ya no hace falta capturar el token), selectores de potencia/agua/mopa, switch de doble pasada, botones de limpieza por habitación y sensores de área/tiempo.
 
