@@ -1,8 +1,11 @@
 # Conga 8090 Ultra - Local MQTT Bridge (Home Assistant Add-on)
 
-Este proyecto permite el **control local total** del robot aspirador **Cecotec Conga 8090 Ultra** desde Home Assistant sin depender de los servidores en la nube de Cecotec. 
+Este proyecto permite el **control local total** del robot aspirador **Cecotec Conga 8090 Ultra** desde Home Assistant sin depender de los servidores en la nube de Cecotec.
 
 A diferencia de las generaciones anteriores (modelos 3090 al 6090) que utilizaban un protocolo binario compatible con proyectos como Congatudo, la serie 8000/Ultra utiliza una arquitectura moderna basada en **TLS 1.2 → WebSocket → Mensajes JSON** y mapas en **Protobuf (zlib)**. Este puente suplanta por completo al servidor oficial, terminando la conexión cifrada de forma segura en tu entorno local.
+
+> ℹ️ **¿Buscas la documentación técnica completa?** Este repositorio es el **add-on listo para instalar**. Si quieres entender el protocolo por dentro, ver la especificación completa, las herramientas de captura, el decodificador de mapa o adaptar otro modelo, visita el repositorio hermano de documentación e ingeniería inversa:
+> **[github.com/miguelsg29/conga_8090_mqtt_bridge](https://github.com/miguelsg29/conga_8090_mqtt_bridge)** — donde iremos añadiendo más información técnica, guías de depuración y el detalle del protocolo.
 
 ---
 
@@ -13,6 +16,7 @@ A diferencia de las generaciones anteriores (modelos 3090 al 6090) que utilizaba
 *   **Sensores de Telemetría:** Nivel de batería corregido (escala 0-100%), área total limpiada ($m^2$) y tiempo de limpieza transcurrido (minutos).
 *   **Limpieza Inmediata por Habitación:** Botones individuales independientes creados automáticamente para limpiar estancias específicas en base a los IDs reales de tu mapa.
 *   **Selectores de Configuración Dinámica:** Ajuste en caliente desde la interfaz de Home Assistant para la potencia de succión, caudal de agua, nivel de vibración de la mopa y conmutador para doble pasada ($x2$).
+*   **JWT Sintético (sin caducidad):** El puente genera automáticamente el token de autenticación, así que **no necesitas capturarlo ni renovarlo nunca**. El robot no valida la firma del token (verificado empíricamente).
 *   **MQTT Autodiscovery:** No requiere configuración manual de entidades en YAML; el puente publica la configuración del dispositivo y Home Assistant lo detecta al instante.
 
 ---
@@ -34,7 +38,7 @@ Para instalar el puente de forma nativa en tu servidor de Home Assistant OS sin 
 
 ## Guía de Puesta en Marcha
 
-### Paso 1: Extracción Exhaustiva de Credenciales Privadas
+### Paso 1: Extracción de los Identificadores de tu Robot
 
 Dado que las comunicaciones van cifradas, necesitas interceptar los identificadores únicos de tu unidad física antes de aislarla de internet.
 
@@ -54,7 +58,8 @@ Dado que las comunicaciones van cifradas, necesitas interceptar los identificado
     *   `userId` (ID de vinculación de la App)
     *   `sn` (Número de serie)
     *   `mac` (Dirección MAC física)
-    *   `AUTH` (Token de sesión JWT completo)
+
+> 💡 **Nota sobre el token JWT (`AUTH`):** Ya **no es necesario** capturarlo. El add-on genera un token sintético sin caducidad de forma automática (el robot no valida la firma). Si por algún motivo tu unidad lo rechazara, siempre puedes capturar el campo `AUTH` del bloque `auth/login` y pegarlo en el campo opcional `AUTH_JWT` de la configuración.
 
 > ⚠️ **NOTA DE SEGURIDAD:** Una vez obtenidos estos valores, detén el script de captura. Estos identificadores son estrictamente privados y actúan como las llaves de tu dispositivo; no los expongas en ningún repositorio público.
 
@@ -78,12 +83,13 @@ Una vez completada la instalación interna, no inicies el servicio todavía:
 2.  Completa los campos del formulario interactivo generado automáticamente con tus credenciales locales:
     *   **MQTT_HOST:** IP local de tu instancia de Home Assistant o broker Mosquitto independiente.
     *   **MQTT_USER / MQTT_PASS:** Credenciales de acceso de tu broker.
-    *   **ROBOT_DID / USERID / SN / MAC / AUTH_JWT:** Pega los valores exactos que recopilaste durante el proceso de captura del Paso 1.
-    *   **Configuraciones por Defecto:** Define los niveles de succión, agua y mopa preferidos con los que deseas que el robot inicie de forma automática al pulsar los botones de limpieza rápida por habitación.
+    *   **ROBOT_DID / USERID / SN / MAC:** Pega los valores exactos que recopilaste durante el proceso de captura del Paso 1.
+    *   **AUTH_JWT / USE_SYNTHETIC_JWT (opcional):** Déjalos como están. Por defecto, `USE_SYNTHETIC_JWT` está activo y el add-on genera el token automáticamente. Solo rellena `AUTH_JWT` si necesitas usar el token capturado de tu robot.
+    *   **Configuraciones por Defecto:** Define los niveles de succión, agua y mopa preferidos con los que deseas que el robot limpie al pulsar los botones de limpieza por habitación, y si quieres doble pasada ($x2$).
 3.  Haz clic en **Guardar**.
 4.  Regresa a la pestaña **Información** y haz clic en **Iniciar**.
 
-El script se encargará de levantar el servidor local de suplantación cifrada y mapeará instantáneamente la aspiradora como un dispositivo MQTT completo e interactivo dentro de tu red.
+El script se encargará de levantar el servidor local de suplantación cifrada y mapeará instantáneamente la aspiradora como un dispositivo MQTT completo e interactivo dentro de tu red. En los registros verás la línea `[JWT] modo: SINTÉTICO (generado, sin caducidad)` confirmando que el token se genera solo.
 
 ---
 
@@ -99,9 +105,42 @@ En cuanto el robot arranque, verás en los registros (logs) del Add-on cómo apa
 
 ---
 
+## Entidades que aparecerán en Home Assistant
+
+Tras arrancar el add-on y con el robot conectado, se crea automáticamente un dispositivo **Conga 8090** con:
+
+*   **Aspiradora** (`vacuum.conga_8090`): iniciar, pausar, reanudar, parar, volver a base y localizar.
+*   **Sensores:** batería (%), área limpiada ($m^2$) y tiempo de limpieza (min).
+*   **Botones "Limpiar &lt;habitación&gt;":** uno por cada estancia detectada en tu mapa.
+*   **Selectores:** potencia de succión, nivel de agua y vibración de la mopa.
+*   **Interruptor:** doble pasada ($x2$).
+
+Al pulsar un botón de habitación, el puente aplica primero la configuración de los selectores (potencia/agua/mopa/x2) y luego lanza la limpieza de esa estancia.
+
+---
+
+## Solución de Problemas y Depuración
+
+Si el robot no aparece o algo no funciona, revisa los **registros (logs)** del add-on. Señales útiles:
+
+*   `[JWT] modo: SINTÉTICO...` → el token se genera correctamente.
+*   `[robot] conectado ✓` → el robot ha encontrado el puente (DNS y puerto 9090 OK).
+*   Si no aparece `[robot] conectado` en 1-2 minutos: revisa el **DNS Rewrite** (debe apuntar a la IP de HA) y que el **puerto 9090** esté accesible. Reinicia el robot con corte eléctrico real.
+*   Si el robot conecta pero no salen las entidades: recarga la integración **MQTT** en Home Assistant.
+
+Para depuración avanzada del protocolo, captura de comandos nuevos, o entender el
+detalle de los mensajes, consulta el repositorio de documentación técnica:
+**[github.com/miguelsg29/conga_8090_mqtt_bridge](https://github.com/miguelsg29/conga_8090_mqtt_bridge)**.
+
+---
+
 ## Contribuciones e Ingeniería Inversa del Mapa
 
-Si deseas avanzar en el renderizado en tiempo real del mapa de tu vivienda dentro de Home Assistant, el script `decodificar_mapa.py` detalla el mecanismo matemático de descompresión de la carga útil binaria del servicio `syn_no_cache`. Extrae el flujo *zlib* (firma `78 9c`), parsea los campos de nivel superior mapeados en *Protobuf* y reconstruye de manera exacta la rejilla espacial de $800 \times 800$ celdas para exportar el plano de habitaciones etiquetado en formato de imagen nativa.
+Si deseas avanzar en el renderizado en tiempo real del mapa de tu vivienda dentro de Home Assistant, el script `decodificar_mapa.py` detalla el mecanismo de descompresión de la carga útil binaria del servicio `syn_no_cache`. Extrae el flujo *zlib* (firma `78 9c`), parsea los campos de nivel superior mapeados en *Protobuf* y reconstruye la rejilla espacial de $800 \times 800$ celdas para exportar el plano de habitaciones etiquetado en formato de imagen nativa.
+
+La especificación completa del protocolo (transporte, comandos, estados, mapa y
+todos los hallazgos de la ingeniería inversa) está en el repositorio de
+documentación: **[github.com/miguelsg29/conga_8090_mqtt_bridge](https://github.com/miguelsg29/conga_8090_mqtt_bridge)**.
 
 ---
 
