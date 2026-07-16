@@ -13,6 +13,8 @@ export ROBOT_MAC=$(jq -r '.ROBOT_MAC // ""' $CONFIG_PATH)
 export FACTORY_ID=$(jq -r '.FACTORY_ID // "1003"' $CONFIG_PATH)
 export PROJECT_TYPE=$(jq -r '.PROJECT_TYPE // "CECOTECCRL350-1001"' $CONFIG_PATH)
 export LISTEN_PORT=$(jq -r '.LISTEN_PORT // 9090' $CONFIG_PATH)
+# map_head_id opcional (el puente lo detecta solo; sirve de respaldo)
+export MAP_HEAD_ID=$(jq -r '.MAP_HEAD_ID // ""' $CONFIG_PATH)
 
 # JWT: opcional. Si se deja vacio (o USE_SYNTHETIC_JWT=true), el puente genera
 # un JWT sintetico sin caducidad (el robot no valida la firma).
@@ -38,5 +40,13 @@ else
     echo "[INFO] Certificados no encontrados en /ssl/. Generando certificados TLS locales automáticos..."
     openssl req -x509 -newkey rsa:2048 -keyout /key.pem -out /cert.pem -days 3650 -nodes -subj "/CN=tcp-cecotec.3irobotix.net"
 fi
+# Horarios por habitacion (opcional): si el usuario deja un fichero de horarios en
+# /config/conga_plans.json, se usa como plans.json del puente. Formato en el repo
+# principal (plans.example.json). Sin el, el resto de controles funcionan igual.
+if [ -f "/config/conga_plans.json" ]; then
+    cp /config/conga_plans.json /plans.json
+    echo "[INFO] Horarios cargados de /config/conga_plans.json"
+fi
+
 echo "[INFO] Lanzando el servidor puente Conga 8090..."
 python3 /conga_mqtt_bridge.py

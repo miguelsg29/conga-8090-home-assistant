@@ -18,6 +18,10 @@ A diferencia de las generaciones anteriores (modelos 3090 al 6090) que utilizaba
 *   **Selectores de Configuración Dinámica:** Ajuste en caliente desde la interfaz de Home Assistant para la potencia de succión, caudal de agua, nivel de vibración de la mopa y conmutador para doble pasada ($x2$).
 *   **JWT Sintético (sin caducidad):** El puente genera automáticamente el token de autenticación, así que **no necesitas capturarlo ni renovarlo nunca**. El robot no valida la firma del token (verificado empíricamente).
 *   **MQTT Autodiscovery:** No requiere configuración manual de entidades en YAML; el puente publica la configuración del dispositivo y Home Assistant lo detecta al instante.
+*   **Horarios por habitación:** planifica limpiezas por día y hora con el modo (potencia/agua/mopa/x2) **propio de cada estancia**, definidos en un fichero `conga_plans.json` (ver sección de horarios).
+*   **Modo "No molestar":** interruptor y franja horaria de silencio configurables desde Home Assistant.
+*   **Controles avanzados descubiertos por ingeniería inversa:** botón de **vaciar base**, e interruptores/selectores para **turbo en alfombras**, **voz + volumen**, **actualizaciones automáticas (OTA)**, **tipo de base** y **modo de limpieza** (Auto, Limpieza completa, Fregado, Bordes, Espiral, Espiral cuadrada, Punto).
+*   **Sensores de consumibles:** vida de cepillo central, cepillo lateral, filtro y mopa.
 
 ---
 
@@ -112,10 +116,35 @@ Tras arrancar el add-on y con el robot conectado, se crea automáticamente un di
 *   **Aspiradora** (`vacuum.conga_8090`): iniciar, pausar, reanudar, parar, volver a base y localizar.
 *   **Sensores:** batería (%), área limpiada ($m^2$) y tiempo de limpieza (min).
 *   **Botones "Limpiar &lt;habitación&gt;":** uno por cada estancia detectada en tu mapa.
-*   **Selectores:** potencia de succión, nivel de agua y vibración de la mopa.
-*   **Interruptor:** doble pasada ($x2$).
+*   **Selectores:** potencia de succión, nivel de agua, vibración de la mopa, **tipo de base** y **modo de limpieza**.
+*   **Interruptores:** doble pasada ($x2$), **turbo en alfombras**, **voz**, **actualizaciones automáticas (OTA)** y **no molestar**.
+*   **Volumen** de voz y **franja horaria** del no molestar (inicio/fin).
+*   **Botón "Vaciar base"** (autovaciado manual) y, si defines horarios, un interruptor por cada plan más los botones "Sincronizar/Consultar horarios".
+*   **Sensores de consumibles:** cepillo central, lateral, filtro y mopa.
 
 Al pulsar un botón de habitación, el puente aplica primero la configuración de los selectores (potencia/agua/mopa/x2) y luego lanza la limpieza de esa estancia.
+
+---
+
+## Horarios programados por habitación (opcional)
+
+El robot puede ejecutar limpiezas solo, a la hora y días que quieras, con el **modo propio de cada habitación**. Para activarlo:
+
+1.  Crea un fichero llamado **`conga_plans.json`** en la carpeta **`/config`** de Home Assistant (con el add-on *File Editor* o *Samba*).
+2.  Rellénalo siguiendo el formato de [`plans.example.json`](https://github.com/miguelsg29/conga_8090_mqtt_bridge/blob/main/plans.example.json) del repositorio de documentación. Ejemplo:
+    ```json
+    {"plans": [
+      {"id": "noche", "name": "Noche", "enable": true, "time": "22:30",
+       "days": ["lun","mar","mie","jue","vie"],
+       "rooms": [
+         {"room": 13, "fan": "Turbo",  "water": "Alto", "mop": "Potente", "twice": true},
+         {"room": 15, "fan": "Normal", "water": "Bajo", "mop": "Estándar"}
+       ]}
+    ]}
+    ```
+3.  Reinicia el add-on. Aparecerá **un interruptor por plan** en Home Assistant, más los botones **"Sincronizar horarios"** (empuja los planes al robot) y **"Consultar horarios"**.
+
+> Los `room` son los IDs de tu mapa (10–16), los mismos de los botones "Limpiar &lt;habitación&gt;". Si no creas el fichero, todo lo demás funciona igual; solo no aparecen los horarios.
 
 ---
 

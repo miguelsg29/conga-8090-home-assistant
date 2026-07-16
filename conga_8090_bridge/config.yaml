@@ -1,5 +1,5 @@
 name: "Conga 8090 Local Bridge"
-version: "1.1.1"
+version: "1.2.0"
 slug: "conga_8090_local_bridge"
 description: "Puente local y servidor de suplantación para controlar la Conga 8090 Ultra vía MQTT sin nube."
 url: "https://github.com/miguelsg29/conga-8090-home-assistant"
@@ -10,6 +10,9 @@ arch:
 init: false
 ports:
   9090/tcp: 9090
+map:
+  # Acceso a /config para leer horarios opcionales (conga_plans.json)
+  - config:rw
 options:
   MQTT_HOST: "192.168.1.X"
   MQTT_PORT: 1883
@@ -22,6 +25,7 @@ options:
   FACTORY_ID: "1003"
   PROJECT_TYPE: "CECOTECCRL350-1001"
   LISTEN_PORT: 9090
+  MAP_HEAD_ID: ""
   AUTH_JWT: ""
   USE_SYNTHETIC_JWT: true
   DEFAULT_FAN: "Normal"
@@ -40,6 +44,7 @@ schema:
   FACTORY_ID: str
   PROJECT_TYPE: str
   LISTEN_PORT: int
+  MAP_HEAD_ID: str?
   AUTH_JWT: str?
   USE_SYNTHETIC_JWT: bool?
   DEFAULT_FAN: list(Off|Eco|Normal|Turbo)

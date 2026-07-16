@@ -1,3 +1,15 @@
+## 1.2.0
+- Horarios programados por habitación (`setOrder6090`) vía `/config/conga_plans.json`.
+- Control del "no molestar" en HA (interruptor + franja horaria inicio/fin).
+- Nuevos controles descubiertos por ingeniería inversa: botón de vaciar base,
+  interruptores de turbo en alfombras, voz y actualizaciones automáticas (OTA),
+  slider de volumen, selectores de tipo de base y modo de limpieza, y sensores
+  de consumibles (cepillos, filtro, mopa).
+- El interruptor de doble pasada (x2) ahora aplica el ajuste real en el robot.
+- Nueva opción `MAP_HEAD_ID` (opcional; el puente lo detecta solo).
+- Arreglo de codificación en Windows/consola que podía cortar la conexión del
+  robot, y migración a la API de callbacks v2 de paho-mqtt.
+
 ## 1.1.1
 - Actualizar documentación.
 

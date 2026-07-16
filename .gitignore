@@ -1,1 +1,6 @@
 .env
+# Artefactos locales / privados (no subir)
+__pycache__/
+*.pem
+*.log
+plans.json
